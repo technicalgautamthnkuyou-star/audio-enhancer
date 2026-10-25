@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StudioVoice AI - Clean Audio</title>
     <meta name="google-site-verification" content="NQX9OJfzT_O9w1DHwe_SnXOaoPk0O8Bq9WAyaOXTvWE" />
-
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
@@ -40,7 +39,7 @@
         <h4 style="color: #4ade80;">✨ आवाज़ साफ़ हो चुकी है!</h4>
         <audio id="audioPlayer" controls></audio>
         <br>
-        <a id="downloadLink" class="download-btn" download="Studio_Clean_Audio.wav">⬇️ Clean Audio डाउनलोड करें</a>
+        <a id="downloadLink" class="download-btn" download="Studio_Clean_Audio.wav">⬇️  Audio डाउनलोड करें</a>
     </div>
 </div>
 
@@ -75,7 +74,7 @@
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-            statusText.innerText = "⚡ बैकग्राउंड हम और नॉइज़ फ़िल्टर किया जा रहा है...";
+            statusText.innerText = "⚡ हवा और भारी गूंज हटाई जा रही है (200Hz Cut)...";
 
             const offlineCtx = new OfflineAudioContext(
                 decodedBuffer.numberOfChannels,
@@ -86,21 +85,24 @@
             const source = offlineCtx.createBufferSource();
             source.buffer = decodedBuffer;
 
+            // 1. 200Hz हाईपास फ़िल्टर (हवा, पंखा और भारी गूँज साफ़ करने के लिए)
             const highPass = offlineCtx.createBiquadFilter();
             highPass.type = 'highpass';
-            highPass.frequency.value = 90;
+            highPass.frequency.value = 200;
 
+            // 2. वोकल क्लैरिटी बूस्ट (आवाज़ को क्रिस्प और साफ़ बनाने के लिए)
             const clarityEq = offlineCtx.createBiquadFilter();
             clarityEq.type = 'peaking';
-            clarityEq.frequency.value = 3000;
-            clarityEq.gain.value = 3.5;
+            clarityEq.frequency.value = 3200;
+            clarityEq.gain.value = 5.0;
 
+            // 3. वोकल लेवल कंप्रेसर (आवाज़ को स्टूडियो जैसा बैलेंस करने के लिए)
             const compressor = offlineCtx.createDynamicsCompressor();
-            compressor.threshold.setValueAtTime(-24, offlineCtx.currentTime);
-            compressor.knee.setValueAtTime(15, offlineCtx.currentTime);
-            compressor.ratio.setValueAtTime(4, offlineCtx.currentTime);
-            compressor.attack.setValueAtTime(0.003, offlineCtx.currentTime);
-            compressor.release.setValueAtTime(0.25, offlineCtx.currentTime);
+            compressor.threshold.setValueAtTime(-22, offlineCtx.currentTime);
+            compressor.knee.setValueAtTime(12, offlineCtx.currentTime);
+            compressor.ratio.setValueAtTime(5, offlineCtx.currentTime);
+            compressor.attack.setValueAtTime(0.002, offlineCtx.currentTime);
+            compressor.release.setValueAtTime(0.2, offlineCtx.currentTime);
 
             source.connect(highPass);
             highPass.connect(clarityEq);
@@ -109,15 +111,16 @@
 
             source.start(0);
 
-            statusText.innerText = "✨ HD ऑडियो तैयार हो रहा है...";
+            statusText.innerText = "✨ बैकग्राउंड शोर दबाया जा रहा है...";
             const renderedBuffer = await offlineCtx.startRendering();
 
+            // 4. मजबूत नॉइज़ गेट (सन्नाटे और खाली जगह का शोर 95% म्यूट करेगा)
+            const gateThreshold = 0.045;
             for (let channel = 0; channel < renderedBuffer.numberOfChannels; channel++) {
                 const data = renderedBuffer.getChannelData(channel);
-                const gateThreshold = 0.015;
                 for (let i = 0; i < data.length; i++) {
                     if (Math.abs(data[i]) < gateThreshold) {
-                        data[i] = data[i] * 0.2;
+                        data[i] = data[i] * 0.05;
                     }
                 }
             }
@@ -128,10 +131,10 @@
             audioPlayer.src = audioUrl;
             downloadLink.href = audioUrl;
             resultBox.style.display = "block";
-            statusText.innerText = "✅ आवाज़ सफलतापूर्वक क्लीन और HD हो गई!";
+            statusText.innerText = "✅ आवाज़ से हवा और शोर पूरी तरह साफ़ कर दिया गया!";
         } catch (err) {
             console.error(err);
-            statusText.innerText = "❌ ऑडियो फ़ाइल पढ़ने में समस्या आई।";
+            statusText.innerText = "❌ ऑडियो पढ़ने में समस्या आई।";
         } finally {
             enhanceBtn.disabled = false;
         }
