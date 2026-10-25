@@ -4,34 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StudioVoice AI - Clean Audio</title>
-    <script type="module">
-        import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
-        window.GradioClient = Client;
-    </script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 25px; width: 100%; max-width: 480px; text-align: center; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 25px; width: 100%; max-width: 480px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
         h1 { font-size: 22px; margin-bottom: 8px; color: #38bdf8; }
         p { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
         .upload-area { border: 2px dashed #475569; border-radius: 12px; padding: 25px 15px; cursor: pointer; background: #0f172a; margin-bottom: 20px; }
         input[type="file"] { display: none; }
-        .btn { background: #0284c7; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; width: 100%; cursor: pointer; }
+        .btn { background: #0284c7; color: white; border: none; padding: 13px; border-radius: 8px; font-size: 15px; font-weight: bold; width: 100%; cursor: pointer; }
         .btn:disabled { background: #475569; cursor: not-allowed; }
-        .status { margin-top: 15px; font-size: 13px; color: #fbbf24; min-height: 20px; }
-        .result-box { margin-top: 20px; display: none; background: #0f172a; padding: 15px; border-radius: 10px; }
-        audio { width: 100%; margin-top: 10px; }
-        .download-btn { display: inline-block; margin-top: 10px; color: #38bdf8; text-decoration: none; font-weight: bold; }
+        .status { margin-top: 15px; font-size: 13px; color: #38bdf8; min-height: 20px; }
+        .result-box { margin-top: 20px; display: none; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; }
+        audio { width: 100%; margin-top: 12px; }
+        .download-btn { display: inline-block; margin-top: 12px; background: #22c55e; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h1>🎙️ StudioVoice AI</h1>
-    <p>अपनी आवाज़ से बैकग्राउंड शोर हटाएँ और HD बनाएँ</p>
+    <p>अपनी आवाज़ से बैकग्राउंड शोर हटाएँ और HD स्टूडियो क्वालिटी बनाएँ</p>
 
     <div class="upload-area" onclick="document.getElementById('audioInput').click()">
-        <span id="fileName">📂 ऑडियो फ़ाइल चुनें (MP3, WAV)</span>
+        <span id="fileName">📂 ऑडियो फ़ाइल चुनें (MP3, WAV, M4A)</span>
         <input type="file" id="audioInput" accept="audio/*">
     </div>
 
@@ -42,7 +38,7 @@
         <h4 style="color: #4ade80;">✨ आवाज़ साफ़ हो चुकी है!</h4>
         <audio id="audioPlayer" controls></audio>
         <br>
-        <a id="downloadLink" class="download-btn" download="clean_audio.wav">⬇️ Clean Audio डाउनलोड करें</a>
+        <a id="downloadLink" class="download-btn" download="Studio_Clean_Audio.wav">⬇️ Clean Audio डाउनलोड करें</a>
     </div>
 </div>
 
@@ -55,47 +51,126 @@
     const audioPlayer = document.getElementById('audioPlayer');
     const downloadLink = document.getElementById('downloadLink');
 
-    let selectedFile = null;
+    let audioFile = null;
 
     audioInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
-            selectedFile = e.target.files[0];
-            fileName.innerText = selectedFile.name;
+            audioFile = e.target.files[0];
+            fileName.innerText = "🎵 " + audioFile.name;
             enhanceBtn.disabled = false;
         }
     });
 
     enhanceBtn.addEventListener('click', async () => {
-        if (!selectedFile) return;
+        if (!audioFile) return;
 
         enhanceBtn.disabled = true;
-        statusText.innerText = "⏳ AI से प्रोसेस हो रहा है... कृपया 30-40 सेकंड प्रतीक्षा करें";
+        statusText.innerText = "⏳ ऑडियो लोड हो रहा है...";
         resultBox.style.display = "none";
 
         try {
-            const app = await window.GradioClient.connect("ResembleAI/resemble-enhance");
-            statusText.innerText = "⚡ बैकग्राउंड नॉइज़ हटाया जा रहा है...";
-            
-            const result = await app.predict("/predict", [
-                selectedFile,
-                "Midpoint",
-                64,
-                0.5,
-                true
-            ]);
+            const arrayBuffer = await audioFile.arrayBuffer();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-            const enhancedAudioUrl = result.data[1].url;
-            audioPlayer.src = enhancedAudioUrl;
-            downloadLink.href = enhancedAudioUrl;
+            statusText.innerText = "⚡ बैकग्राउंड हम और नॉइज़ फ़िल्टर किया जा रहा है...";
+
+            const offlineCtx = new OfflineAudioContext(
+                decodedBuffer.numberOfChannels,
+                decodedBuffer.length,
+                decodedBuffer.sampleRate
+            );
+
+            const source = offlineCtx.createBufferSource();
+            source.buffer = decodedBuffer;
+
+            const highPass = offlineCtx.createBiquadFilter();
+            highPass.type = 'highpass';
+            highPass.frequency.value = 90;
+
+            const clarityEq = offlineCtx.createBiquadFilter();
+            clarityEq.type = 'peaking';
+            clarityEq.frequency.value = 3000;
+            clarityEq.gain.value = 3.5;
+
+            const compressor = offlineCtx.createDynamicsCompressor();
+            compressor.threshold.setValueAtTime(-24, offlineCtx.currentTime);
+            compressor.knee.setValueAtTime(15, offlineCtx.currentTime);
+            compressor.ratio.setValueAtTime(4, offlineCtx.currentTime);
+            compressor.attack.setValueAtTime(0.003, offlineCtx.currentTime);
+            compressor.release.setValueAtTime(0.25, offlineCtx.currentTime);
+
+            source.connect(highPass);
+            highPass.connect(clarityEq);
+            clarityEq.connect(compressor);
+            compressor.connect(offlineCtx.destination);
+
+            source.start(0);
+
+            statusText.innerText = "✨ HD ऑडियो तैयार हो रहा है...";
+            const renderedBuffer = await offlineCtx.startRendering();
+
+            for (let channel = 0; channel < renderedBuffer.numberOfChannels; channel++) {
+                const data = renderedBuffer.getChannelData(channel);
+                const gateThreshold = 0.015;
+                for (let i = 0; i < data.length; i++) {
+                    if (Math.abs(data[i]) < gateThreshold) {
+                        data[i] = data[i] * 0.2;
+                    }
+                }
+            }
+
+            const wavBlob = bufferToWave(renderedBuffer, renderedBuffer.length);
+            const audioUrl = URL.createObjectURL(wavBlob);
+
+            audioPlayer.src = audioUrl;
+            downloadLink.href = audioUrl;
             resultBox.style.display = "block";
-            statusText.innerText = "✅ काम पूरा हुआ!";
-        } catch (error) {
-            console.error(error);
-            statusText.innerText = "❌ एरर: दोबारा प्रयास करें।";
+            statusText.innerText = "✅ आवाज़ सफलतापूर्वक क्लीन और HD हो गई!";
+        } catch (err) {
+            console.error(err);
+            statusText.innerText = "❌ ऑडियो फ़ाइल पढ़ने में समस्या आई।";
         } finally {
             enhanceBtn.disabled = false;
         }
     });
+
+    function bufferToWave(abuffer, len) {
+        let numOfChan = abuffer.numberOfChannels,
+            length = len * numOfChan * 2 + 44,
+            out = new DataView(new ArrayBuffer(length)),
+            channels = [], i, sample, offset = 0, pos = 0;
+
+        function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+        function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+        setUint32(0x46464952);
+        setUint32(length - 8);
+        setUint32(0x45564157);
+        setUint32(0x20746d66);
+        setUint32(16);
+        setUint16(1);
+        setUint16(numOfChan);
+        setUint32(abuffer.sampleRate);
+        setUint32(abuffer.sampleRate * 2 * numOfChan);
+        setUint16(numOfChan * 2);
+        setUint16(16);
+        setUint32(0x61746164);
+        setUint32(length - pos - 4);
+
+        for (i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+
+        while (offset < len) {
+            for (i = 0; i < numOfChan; i++) {
+                sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                out.setInt16(pos, sample, true);
+                pos += 2;
+            }
+            offset++;
+        }
+        return new Blob([out.buffer], { type: "audio/wav" });
+    }
 </script>
 
 </body>
