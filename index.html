@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudioVoice AI - Clean Audio</title>
+    <title>Studio Voice AI - Free Audio Cleaner & Voice Enhancer</title>
+    <meta name="description" content="Studio Voice AI Tool - अपनी आवाज़ से हवा, पंखे का शोर और बैकग्राउंड नॉइज़ हटाएँ और 1 क्लिक में HD स्टूडियो क्वालिटी पाएँ।">
+    <meta name="keywords" content="Studio Voice AI, Studio Voice AI tool, audiocleaner, technicalgautam, remove noise">
+    <meta name="author" content="TechnicalGautam">
     <meta name="google-site-verification" content="NQX9OJfzT_O9w1DHwe_SnXOaoPk0O8Bq9WAyaOXTvWE" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 25px; width: 100%; max-width: 480px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
-        h1 { font-size: 22px; margin-bottom: 8px; color: #38bdf8; }
+        h1 { font-size: 24px; margin-bottom: 8px; color: #38bdf8; font-weight: bold; }
         p { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
         .upload-area { border: 2px dashed #475569; border-radius: 12px; padding: 25px 15px; cursor: pointer; background: #0f172a; margin-bottom: 20px; }
         input[type="file"] { display: none; }
@@ -24,7 +27,7 @@
 <body>
 
 <div class="card">
-    <h1>🎙️ StudioVoice AI</h1>
+    <h1>🎙️ Studio Voice AI</h1>
     <p>अपनी आवाज़ से बैकग्राउंड शोर हटाएँ और HD स्टूडियो क्वालिटी बनाएँ</p>
 
     <div class="upload-area" onclick="document.getElementById('audioInput').click()">
@@ -39,7 +42,7 @@
         <h4 style="color: #4ade80;">✨ आवाज़ साफ़ हो चुकी है!</h4>
         <audio id="audioPlayer" controls></audio>
         <br>
-        <a id="downloadLink" class="download-btn" download="Studio_Clean_Audio.wav">⬇️  Audio डाउनलोड करें</a>
+        <a id="downloadLink" class="download-btn" download="Studio_Clean_Audio.wav">⬇️ Clean Audio डाउनलोड करें</a>
     </div>
 </div>
 
@@ -85,18 +88,15 @@
             const source = offlineCtx.createBufferSource();
             source.buffer = decodedBuffer;
 
-            // 1. 200Hz हाईपास फ़िल्टर (हवा, पंखा और भारी गूँज साफ़ करने के लिए)
             const highPass = offlineCtx.createBiquadFilter();
             highPass.type = 'highpass';
             highPass.frequency.value = 200;
 
-            // 2. वोकल क्लैरिटी बूस्ट (आवाज़ को क्रिस्प और साफ़ बनाने के लिए)
             const clarityEq = offlineCtx.createBiquadFilter();
             clarityEq.type = 'peaking';
             clarityEq.frequency.value = 3200;
             clarityEq.gain.value = 5.0;
 
-            // 3. वोकल लेवल कंप्रेसर (आवाज़ को स्टूडियो जैसा बैलेंस करने के लिए)
             const compressor = offlineCtx.createDynamicsCompressor();
             compressor.threshold.setValueAtTime(-22, offlineCtx.currentTime);
             compressor.knee.setValueAtTime(12, offlineCtx.currentTime);
@@ -114,7 +114,6 @@
             statusText.innerText = "✨ बैकग्राउंड शोर दबाया जा रहा है...";
             const renderedBuffer = await offlineCtx.startRendering();
 
-            // 4. मजबूत नॉइज़ गेट (सन्नाटे और खाली जगह का शोर 95% म्यूट करेगा)
             const gateThreshold = 0.045;
             for (let channel = 0; channel < renderedBuffer.numberOfChannels; channel++) {
                 const data = renderedBuffer.getChannelData(channel);
@@ -131,7 +130,7 @@
             audioPlayer.src = audioUrl;
             downloadLink.href = audioUrl;
             resultBox.style.display = "block";
-            statusText.innerText = "✅ आवाज़ से हवा और शोर पूरी तरह साफ़ कर दिया गया!";
+            statusText.innerText = "✅ Studio Voice AI द्वारा आवाज़ पूरी तरह साफ़ कर दी गई!";
         } catch (err) {
             console.error(err);
             statusText.innerText = "❌ ऑडियो पढ़ने में समस्या आई।";
